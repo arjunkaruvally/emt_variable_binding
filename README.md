@@ -1,6 +1,10 @@
 # Variable Binding Mechanisms in Recurrent Neural Networks
 
-The repository contains files for exploring variable binding mechanisms in recurrent architectures.
+Tl;dr - check out the demo in `demo_rcopy.ipynb`
+
+The repository contains files for exploring variable binding mechanisms in recurrent architectures. The repo
+serves as a companion to the paper [Episodic Memory Theory of Recurrent Neural Networks: Insights into
+Long-Term Information Storage and Manipulation](https://openreview.net/pdf?id=PYoEjBFAIM).
 
 ## Installation
 
