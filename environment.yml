@@ -1,0 +1,12 @@
+name: func_mod_env
+channels:
+  - defaults
+dependencies:
+  - torchvision==0.8.2
+  - pytorch==1.7.1
+  - scikit-learn
+  - matplotlib
+  - networkx
+  - jupyterlab
+  - tensorboard
+prefix: /home/arjun/anaconda3/envs/func_mod_env
