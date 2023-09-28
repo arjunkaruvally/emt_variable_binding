@@ -19,13 +19,7 @@ class RNNModel(torch.nn.Module):
 
     def forward(self, x):
         o, self.h = self.rnn(x, self.h)
-        # print(x.shape, o.shape)
         self.all_hidden = o.detach().clone()
-        # self.all_hidden = [(o[i, :, :], None) for i in range(o.shape[0])]
-        #
-        # all_output = []
-        # for hidden in self.all_hidden:
-        #     all_output.append(self.readout(hidden[0]))
 
         all_output = self.readout(o)
 
