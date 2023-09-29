@@ -45,3 +45,12 @@ Python notebooks of experiments can also be found in the respective experiment d
 ```experiment_notebooks``` directory. These notebooks will typically have interpretability experiments 
 on all the variable binding tasks.
 
+## Reproducing the results in the paper
+
+The results in the paper can be reproduced by running the following:
+
+- First train the models using the cluster script ```experiments_public/2_all_linearVB/1_0_binary_linearVB.slurm```
+- Run the associated notebooks in ```experiments_public/2_all_linearVB/experiment_notebooks/1_0_binary_linearVB.ipynb``` to generate the 
+  results in the paper.
+- If you want to play with training and interpreting individual variable binding tasks, run the ```demo.rcopy.ipynb``` notebook 
+in the root directory of the repository with various task ids.
