@@ -113,10 +113,9 @@ class RepeatCopyTask(pl.LightningModule):
         self.model.initialize_hidden(batch_size=self.batch_size, device=self.device)
         y_hat = self.forward(x)
 
-        y_hat = torch.stack(y_hat, dim=0).squeeze()
+        # print(y_hat.shape)
+        # y_hat = torch.stack(y_hat, dim=0).squeeze()
         y_hat = y_hat.reshape((-1, self.input_dim))
-        # y_hat = torch.sigmoid(y_hat)  # constraint the output dimension to [0, 1]
-        # y_hat = y_hat*2 - 1  # change domain to +1/-1
         y_hat = y_hat.reshape((-1, self.batch_size, self.input_dim))
         y_hat = y_hat[self.seq_length:, :, :]
         y_hat = y_hat.reshape((-1, self.input_dim))
@@ -143,7 +142,7 @@ class RepeatCopyTask(pl.LightningModule):
         y = y.cpu().detach().numpy()
         y_hat_predictions = y_hat_predictions.cpu().detach().numpy()
 
-        accuracy = (y_hat_predictions.astype(np.int) == y.astype(np.int)).astype(np.int)
+        accuracy = (y_hat_predictions.astype(np.int64) == y.astype(np.int64)).astype(np.int64)
         accuracy = np.mean(accuracy)
 
         self.log("training loss", loss.cpu().item(), prog_bar=True)

@@ -3,6 +3,7 @@ from tqdm import tqdm
 from pytorch_lightning import Trainer, seed_everything
 # from rnn_model import *
 from em_discrete.models.rnn_model import RNNModel
+from em_discrete.models.s4_model import S4Model
 from em_discrete.models.lstm_model import LSTMModel
 from em_discrete.models.polyEpisodicHopfield import PolyEpisodicRNNModel
 from em_discrete.models.polyEpisodicHopfieldwDelay import PolyEpisodicRNNModelwDelay
@@ -28,7 +29,7 @@ parser.add_argument('--l2_penalty', type=float, default=0.0, help='l2 regulariza
 parser.add_argument('--max_epochs', type=int, default=10, help='number of sequences to train')
 parser.add_argument('--reset_hidden', action='store_true', help='reset the hidden state of the RNN')
 parser.add_argument('--model_type', type=str, default='rnn',
-                    help='model to use for training (rnn)')
+                    help='model to use for training (rnn|s4)')
 
 parser.add_argument('--experiment_name', type=str, default="repeat_copy_test",
                     help='name of the task used for logging')
@@ -68,6 +69,8 @@ seed_everything(seed)
 
 if args.model_type == 'rnn':
     model = RNNModel(input_dim, hidden_dim, output_dim, bias=False)
+elif args.model_type == 's4':
+    model = S4Model(input_dim, hidden_dim, output_dim, l_max=args.seq_length*10, bias=False)
 else:
     print("Model type not recognized")
     sys.exit()
