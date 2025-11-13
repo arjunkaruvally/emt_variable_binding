@@ -1,0 +1,482 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage}
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage{newtxtext}
+\usepackage{newtxmath}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{cancel}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{caption} 
+\usepackage{algpseudocode}
+\usepackage{bbm}
+\usepackage{float}
+\usepackage{framed}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{physics}
+\usepackage{empheq}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{breqn}
+\usepackage{multirow}
+\usepackage{pdfpages}
+
+\usepackage{tikz}
+\tikzset{elegant/.style={smooth, black, thick, samples=101}}
+\tikzstyle{round}=[circle ,text centered,draw=black]
+\tikzstyle{arrow} = [-,>=stealth]
+\tikzstyle{rct}=[rectangle,draw,thin,fill=white]
+\usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,positioning,fit,matrix,calc}
+
+\usepackage[most]{tcolorbox}
+
+\newtcbox{\mymath}[1][]{%
+    nobeforeafter, math upper, tcbox raise base,
+    enhanced, colframe=blue!30!black,
+    colback=blue!30, boxrule=1pt,
+    #1}
+
+\usepackage[colorlinks=true, linkcolor=red, urlcolor=blue, citecolor=blue]{hyperref}
+\allowdisplaybreaks
+
+
+\DeclareMathOperator*{\E}{\mathbb{E}}
+\DeclareMathOperator{\X}{\mathbf{X}}
+\DeclareMathOperator{\mean}{\boldsymbol{\mu}}
+\DeclareMathOperator{\std}{\boldsymbol{\sigma}}
+\let\Pr\relax
+\DeclareMathOperator*{\Pr}{\mathbb{P}}
+\DeclareMathOperator*{\R}{\mathbb{E}}
+\newcommand\thres{{\mbox{\it{thres}}}}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+%New colors defined below
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+%Code listing style named "mystyle"
+\lstdefinestyle{mystyle}{
+  backgroundcolor=\color{backcolour},   commentstyle=\color{codegreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,         
+  breaklines=true,                 
+  captionpos=b,                    
+  keepspaces=true,                 
+  numbers=left,                    
+  numbersep=5pt,                  
+  showspaces=false,                
+  showstringspaces=false,
+  showtabs=false,                  
+  tabsize=2
+}
+
+%"mystyle" code listing set
+\lstset{style=mystyle}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 8.9in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+
+\parindent 0in
+\parskip 1.5ex
+
+\begin{document}
+
+	\begin{center}
+		\framebox{
+			\vbox{
+				\hbox to 6.50in { {\bf Episodic Memory Theory of RNNs} \hfill }
+				\vspace{4mm}
+				\hbox to 6.50in { {\Large \hfill Energy Analysis \hfill} }
+				\vspace{2mm}
+				\hbox to 6.50in { { Arjun Karuvally \hfill} }
+			}
+		}
+	\end{center}
+	\vspace*{1mm}
+	\section{System - Derivation from Continuous Time Dynamics}
+	
+The general system of neurons is governed by the following equations. The state variables of the dynamical system are $V_f \in \mathbb{R}^{N_f \times 1}, V_h \in \mathbb{R}^{N_h \times 1}, V_d \in \mathbb{R}^{N_f \times 1}$. The interactions are represented by $\Xi \in \mathbb{R}^{N_f \times N_h}$ and $\Phi \in \mathbb{R}^{N_h \times N_h}$. $\Phi$ represents synaptic strength \textit{from} $V_h$ \textit{to} $V_h$.
+	
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f \dv{V_f}{t} =& \sqrt{\alpha_s} \, \Xi \, \sigma_h(V_h) - V_f \, , \\
+	\mathcal{T}_h \dv{V_h}{t} =& \sqrt{\alpha_s} \, \Xi^\top \, \sigma_f(V_f) + \alpha_c \Phi^\top \Xi^\top V_{d} - V_h \, , \\
+	\mathcal{T}_d \dv{V_d}{t} =& \sigma_f(V_f) - V_d \, .
+\end{dcases}
+\end{empheq}
+%
+The system has an energy function given by
+%
+\begin{dmath}
+	E = \Bigg[ V_f^\top \, \sigma_f(V_f) - L_f\Bigg] + \Bigg[ V_h^\top \, \sigma_h(V_h) - L_h \Bigg] - \Bigg[ \sqrt{\alpha_s} \, \sigma_f(V_f)^\top \, \Xi \, \sigma_h(V_h) \Bigg] - \alpha_c \Bigg[ V_{d}^\top \, \Xi \, \Phi \sigma_h(V_h)  \Bigg]
+\end{dmath}
+%
+Conditions:
+\begin{itemize}
+	\item $\mathcal{T}_h \rightarrow 0$
+	\item $\mathcal{T}_d \rightarrow 0$
+	\item discretize time for $V_f$
+	\item $\sigma_h(X) = X$
+	\item $\alpha_s = \alpha_c = 1$
+	\item $\mathcal{T}_f = 1$
+\end{itemize}    
+%
+$\sigma_h(X) = X \implies L_h = \frac{1}{2} \, V_h^\top \, V_h$
+
+\section{Deriving governing equations}
+
+From a given time $t$, the update equations are given as
+
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) =& \Xi \, \sigma_h(V_h(t)) - V_f(t) \, , \\
+	V_h(t) =& \Xi^\top \, \sigma_f(V_f(t)) + \Phi^\top \Xi^\top V_{d}(t) \, , \\
+	V_d(t) =& \sigma_f(V_f(t)) \, .
+\end{dcases}
+\end{empheq}
+%
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) =& \Xi \, \sigma_h(V_h) - V_f(t) \, , \\
+	V_h(t) =& \Xi^\top \, \sigma_f(V_f(t)) + \Phi^\top \Xi^\top \sigma_f(V_f) \, , \\
+\end{dcases}
+\end{empheq}
+%
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) =& \Xi \, V_h - V_f(t) \, , \\
+	V_h(t) =& (I + \Phi^\top) \Xi^\top \sigma_f(V_f) \, , \\
+\end{dcases}
+\end{empheq}
+%
+\begin{dmath}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(V_f) - V_f(t)
+\end{dmath}
+%
+Final discrete upate equation
+%
+\begin{dmath}
+	V_f(t+1) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(V_f)
+	\label{governingDynamics:original}
+\end{dmath}
+%
+Restrict the norm of matrix $||\Xi \, (I + \Phi^\top) \Xi^\top|| \leq 1$. \\
+%
+This allows us to consider the transformation $V'_f = \sigma_f(V_f)$, so for invertible $\sigma_f$, 
+%
+\begin{dmath}
+	\sigma^{-1}_f(V'_f(t+1)) = \Xi \, (I + \Phi^\top) \Xi^\top V'_f
+\end{dmath}
+%
+\begin{dmath}
+	\sigma^{-1}_f(V'_f(t+1)) = \Xi \, (I + \Phi^\top) \Xi^\top V'_f
+\end{dmath}
+%
+\begin{dmath}
+	V'_f(t+1) = \sigma_f(\Xi \, (I + \Phi^\top) \Xi^\top V'_f)
+	\label{governingDynamics:rnn}
+\end{dmath}
+%
+this is a general update equation for an RNN without bias.
+%
+\section{Topological Conjugacy with RNNs}
+%
+Proof that dynamical systems governed by Equations \ref{governingDynamics:original} and \ref{governingDynamics:rnn} are topological conjugates.
+
+Consider $f(x) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(x)$ for Equation \ref{governingDynamics:original} and $g(x) = \sigma_f(\Xi \, (I + \Phi^\top) \Xi^\top x)$ for Equation \ref{governingDynamics:rnn}. Consider a homeomorphism $h(y) = \sigma_f(y)$ on $g$. Then,
+%
+\begin{dmath}
+	(h^{-1} \circ g \circ h) (x) = \sigma_f^{-1}( \sigma_f(\Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(x)) ) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(x) = f(x)
+\end{dmath}
+%
+So, for the homeomorphism $h$ on $g$, we get that $h^{-1} \circ g \circ h = f$ proving that $f$ and $g$ are topological conjugates. Therefore all dynamical properties of $f$ and $g$ are shared.
+
+\section{Deriving Energy}
+%
+From the proof of topological conjugacy, we can show energy properties on only $f$.
+%
+Careful about the time in discretization. Keep $V_d$ as is only to convert in the end
+%
+\begin{dmath}
+	E(t) = \Bigg[ V_f(t)^\top \, \sigma_f(V_f(t)) - L_f(t)\Bigg] + \frac{1}{2} V_h(t)^\top \, V_h(t) - \Bigg[ \sigma_f(V_f(t))^\top \, \Xi \, V_h(t) \Bigg] - \Bigg[ V_d(t)^\top \, \Xi \, \Phi V_h(t)  \Bigg]
+\end{dmath}
+%
+\begin{dmath}
+	E(t+1) = \Bigg[ V_f(t+1)^\top \, \sigma_f(V_f(t+1)) - L_f(t+1)\Bigg] + \frac{1}{2} V_h(t+1)^\top \, V_h(t+1) - \Bigg[ \sigma_f(V_f(t+1))^\top \, \Xi \, V_h(t+1) \Bigg] - \Bigg[ V_d(t+1)^\top \, \Xi \, \Phi V_h(t+1)  \Bigg]
+\end{dmath}
+%
+Working with $V_h(t) = \Xi^\top \sigma_f(V_f) + \Phi^\top \Xi^\top V_d(t)$. The next subsections will try to compute $E(t+1) - E(t)$.
+%
+Instead of directly discretizing $E$, lets try to use the continuous formulation first using $V_h = \Xi^\top \, \sigma_f(V_f) + \Phi^\top \, \Xi^\top V_{d}$
+%
+\begin{dmath}
+	E(t) = \Bigg[ V_f^\top \, \sigma_f(V_f) - L_f\Bigg] + \frac{1}{2} V_h^\top \, V_h - \Bigg[ \sigma_f(V_f)^\top \, \Xi \, V_h \Bigg] - \Bigg[ V_d^\top \, \Xi \, \Phi V_h \Bigg]
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\begin{dmath}
+	E_2(t) = \frac{1}{2} \left[ \left( \sigma_f(V_f)^\top \Xi + V_d^\top \Xi \Phi \right) \left( \Xi^\top \sigma_f(V_f) + \Phi^\top \Xi^\top V_d \right) \right]
+\end{dmath}
+%
+\begin{dmath}
+	E_2(t) = \frac{1}{2} \left[ \sigma_f(V_f)^\top \Xi \Xi^\top \sigma_f(V_f) + \textcolor{red}{\sigma_f(V_f)^\top \Xi \Phi^\top \Xi^\top V_d} + \textcolor{red}{V_d^\top \Xi \Phi \Xi^\top \sigma_f(V_f)} + V_d^\top \Xi \Phi \Phi^\top \Xi^\top V_d \right]
+\end{dmath}
+%
+\begin{dmath}
+	E_2(t) = \frac{1}{2} \textcolor{blue}{\sigma_f(V_f)^\top \Xi \Xi^\top \sigma_f(V_f)} + \textcolor{red}{\sigma_f(V_f)^\top \Xi \Phi^\top \Xi^\top V_d} + \frac{1}{2} V_d^\top \Xi \Phi \Phi^\top \Xi^\top V_d
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\begin{dmath}
+	E_3(t) = - \sigma_f(V_f)^\top \, \Xi \, V_h
+\end{dmath}
+%
+\begin{dmath}
+	E_3(t) = - \sigma_f(V_f)^\top \, \Xi \, \left( \Xi^\top \, \sigma_f(V_f) + \Phi^\top \, \Xi^\top V_{d} \right)
+\end{dmath}
+%
+\begin{dmath}
+	E_3(t) = - \left[ \textcolor{blue}{\sigma_f(V_f)^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f)} + \textcolor{red}{\sigma_f(V_f)^\top \, \Xi \Phi^\top \, \Xi^\top V_{d}} \right]
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\begin{dmath}
+	E_4(t) = - \left[ V_d^\top \Xi \Phi \left( \Xi^\top \, \sigma_f(V_f) + \Phi^\top \, \Xi^\top V_{d} \right) \right]
+\end{dmath}
+%
+\begin{dmath}
+	E_4(t) = - \left[ V_d^\top \Xi \Phi \Xi^\top \, \sigma_f(V_f) + V_d^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d} \right]
+\end{dmath}
+%
+\begin{dmath}
+	E_4(t) = - \left[ \textcolor{red}{\sigma_f(V_f) \, \Xi \Phi^\top \Xi^\top V_d} + V_d^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d} \right]
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\begin{dmath}
+	E = E_1 + E_2 + E_3 + E_4
+\end{dmath}
+%
+Simplifying the colored terms
+%
+\begin{dmath}
+	E = V_f^\top \sigma_f(V_f) - L_f - \frac{1}{2} \textcolor{blue}{\sigma_f(V_f)^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f)} - \textcolor{red}{\sigma_f(V_f)^\top \, \Xi \Phi^\top \Xi^\top V_d} -\frac{1}{2} V_d^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d}
+\end{dmath}
+%
+\begin{empheq}[box=\tcbhighmath]{equation}
+	E = V_f^\top \sigma_f(V_f) - \left[ L_f + \frac{1}{2} \sigma_f(V_f)^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f) + \sigma_f(V_f)^\top \, \Xi \Phi^\top \Xi^\top V_d + \frac{1}{2} V_d^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d} \right]
+\end{empheq}
+
+\section*{Discrete Energy Update - Not complete (non linear terms issue)}
+
+\subsection{Trial 1: Adiabatic $V_d$}
+%
+Case of direct substitution of time.
+%
+\begin{empheq}{equation}
+\begin{dcases}
+	V_f(t+1) =& \Xi \, \Xi^\top \, \sigma_f(V_f(t)) + \Xi \, \Phi^\top \, \Xi^\top V_{d}(t) , \\
+	V_d(t) =& \sigma_f(V_f(t)) \, .
+\end{dcases}
+\end{empheq}
+%
+Consider the discrete energy equation at time $t$
+%
+\begin{dmath}
+	E(t) = V_f(t)^\top \sigma_f(V_f(t)) - L_f(t) + \frac{1}{2} \sigma_f(V_f(t))^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f(t)) - \sigma_f(V_f(t)) \, \Xi \Phi^\top \Xi^\top V_d(t) - \textcolor{red}{\frac{1}{2} V_d(t)^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d}(t)}
+\end{dmath}
+%
+and 
+%
+\begin{dmath}
+	E(t+1) = V_f(t+1)^\top \sigma_f(V_f(t+1)) - L_f(t+1) + \frac{1}{2} \sigma_f(V_f(t+1))^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f(t+1)) - \sigma_f(V_f(t+1)) \, \Xi \Phi^\top \Xi^\top V_d(t) - \textcolor{red}{\frac{1}{2} V_d(t)^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d}(t)}
+\end{dmath}
+%
+\subsubsection{E(t+1) in terms of V_f(t)}
+
+\begin{dmath}
+	E_1(t+1) = \left( \sigma_f(V_f(t))^\top \, \Xi \, \Xi^\top + V_{d}^\top(t) \, \Xi \, \Phi \, \Xi^\top  \right) \sigma_f(V_f(t+1))
+\end{dmath}
+
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+
+\begin{dmath}
+	E_3(t+1) = \left( \sigma_f(V_f(t))^\top \, \Xi \, \Xi^\top + V_{d}^\top(t) \, \Xi \, \Phi \, \Xi^\top  \right) \sigma_f(V_f(t+1))
+\end{dmath}
+
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+
+How to deal with these nonlinear terms?
+
+\section{Tanh Case - only Elmann RNN w/o bias - nonlinear terms issue}
+%
+\begin{dmath}
+	E(t) = V_f(t)^\top \tanh(V_f(t))^\top - \sum \log |\cosh(V_f(t))| - \frac{1}{2} \tanh(V_f(t))^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f(t)) - \tanh(V_f(t)) \, \Xi \Phi^\top \Xi^\top V_d(t) - \textcolor{red}{\frac{1}{2} V_d(t)^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d}(t)}
+\end{dmath}
+%
+\begin{dmath}
+	E(t+1) = V_f(t+1)^\top \tanh(V_f(t+1))^\top - \sum \log |\cosh(V_f(t+1))| - \frac{1}{2} \tanh(V_f(t+1))^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f(t+1)) - \tanh(V_f(t+1)) \, \Xi \Phi^\top \Xi^\top V_d(t+1) - \textcolor{red}{\frac{1}{2} V_d(t+1)^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d}(t+1)}
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+%
+\begin{dmath}
+	\Delta E_1 = \tanh(V_f(t))^\top \, \Xi \, \Xi^\top \tanh(V_f(t+1)) + \textcolor{red}{V_{d}(t)^\top \Xi \, \Phi \, \Xi^\top \tanh(V_f(t+1))} - V_f(t)^\top \tanh(V_f(t)) 
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+%
+\begin{dmath}
+	\Delta E_2 = \sum \log \frac{|\cosh(V_f(t+1))|}{|\cosh(V_f(t))|} 
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+%
+\begin{dmath}
+	\Delta E_3 = - \frac{1}{2} \left[ \tanh(V_f(t+1))^\top \Xi \Xi^\top \tanh(V_f(t+1)) - \tanh(V_f(t))^\top \Xi \Xi^\top \tanh(V_f(t)) \right]
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+%
+\begin{dmath}
+	\Delta E_4 = - \left[ \tanh(V_f(t+1))^\top \, \Xi \Phi^\top \Xi^\top V_d(t+1) - \tanh(V_f(t))^\top \, \Xi \Phi^\top \Xi^\top V_d(t) \right]
+\end{dmath}
+%
+Suppose adiabatic, then $V_d(t+1) = V_d(t)$
+%
+\begin{dmath}
+	\Delta E_4 = - \left[ \tanh(V_f(t+1)) - \tanh(V_f(t)) \right]^\top \, \Xi \Phi^\top \Xi^\top V_d(t)
+\end{dmath}
+%
+Trying simplification using identities
+%
+\begin{dmath}
+	\Delta E_4 = - \left[ \tanh(V_f(t+1) - V_f(t))(1 - \tanh(V_f(t+1)) \tanh(V_f(t))) \right] \, \Xi \Phi^\top \Xi^\top V_d(t)
+\end{dmath}
+%
+Suppose $V_d(t+1) = V_d(t) = \sigma_f(V_f(t))$
+\begin{dmath}
+	\Delta E_4 = - \left[ \textcolor{red}{\tanh(V_f(t+1))^\top \Xi \Phi^\top \Xi^\top \tanh(V_f(t))} - \textcolor{blue}{\tanh(V_f(t))^\top \Xi \Phi^\top \Xi^\top \tanh(V_f(t))} \right]
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+%
+\begin{dmath}
+	\Delta E = \Delta E_1 + \Delta E_2 + \Delta E_3 + \Delta E_4 + \Delta E_5
+\end{dmath}
+%
+\begin{dmath}
+	= \tanh(V_f(t))^\top \, \Xi \, \Xi^\top \tanh(V_f(t+1)) - V_f(t)^\top \tanh(V_f(t))  + \sum \log \frac{|\cosh(V_f(t+1))|}{|\cosh(V_f(t))|}  - \frac{1}{2} \tanh(V_f(t+1))^\top \Xi \Xi^\top \tanh(V_f(t+1)) + \frac{1}{2} \tanh(V_f(t))^\top \Xi \Xi^\top \tanh(V_f(t)) + \tanh(V_f(t))^\top \Xi \Phi^\top \Xi^\top \tanh(V_f(t))
+\end{dmath}
+%
+\begin{dmath}
+	= \frac{1}{2} \left( \tanh(V_f(t))^\top - \tanh(V_f(t+1)^\top) \right) \, \Xi \, \Xi^\top \tanh(V_f(t+1)) + \frac{1}{2} \tanh(V_f(t))^\top \Xi \Xi^\top \left( \tanh(V_f(t)) + \tanh(V_f(t+1)^\top) \right) - V_f(t)^\top \tanh(V_f(t))  + \sum \log \frac{|\cosh(V_f(t+1))|}{|\cosh(V_f(t))|} + \tanh(V_f(t))^\top \Xi \Phi^\top \Xi^\top \tanh(V_f(t))
+\end{dmath}
+
+\section{Proof using Concave Convex Procedure}
+%
+\begin{dmath}
+V_f(t+1) = \Xi \, \Xi^\top \, \sigma_f(V_f(t)) + \Xi \, \Phi^\top \, \Xi^\top V_{d}(t)
+\end{dmath}
+%
+\begin{empheq}{equation}
+	E = V_f^\top \sigma_f(V_f) - L_f + \frac{1}{2} \sigma_f(V_f)^\top \, \Xi \, \Xi^\top \, \sigma_f(V_f) + \sigma_f(V_f)^\top \, \Xi \Phi^\top \Xi^\top V_d + \frac{1}{2} V_d^\top \Xi \Phi \Phi^\top \, \Xi^\top V_{d}
+\end{empheq}
+%
+Let $x = V_f and y = V_d, \sigma = \sigma_f = \pdv{L}{x}, L = L_f$
+%
+\begin{dmath}
+x(t+1) = \Xi \, \Xi^\top \, \sigma_f(x(t)) + \Xi \, \Phi^\top \, \Xi^\top y(t)
+\end{dmath}
+%
+\begin{empheq}{equation}
+	E(x) = x^\top \sigma(x) - L + \frac{1}{2} \sigma(x)^\top \, \Xi \, \Xi^\top \, \sigma(x) + \sigma(x)^\top \, \Xi \, \Phi^\top \Xi^\top y + \frac{1}{2} y^\top \Xi \, \Phi \, \Phi^\top \, \Xi^\top y
+\end{empheq}
+%
+Assume that $E$ is bounded \textcolor{red}{think of proving this}
+
+\subsection*{Function convexity}
+
+\subsubsection*{Energy Term 1, 2}
+
+\begin{dmath}
+	\mathcal{J}(x^\top \sigma(x) - L) = \sigma(x)^\top + x^\top . \mathcal{J}(\sigma(x)) - \mathcal{J}(L)
+\end{dmath}
+%
+\begin{dmath}
+	\mathcal{J}(x^\top \sigma(x) - L) =  x^\top . \mathcal{J}(\sigma(x))
+\end{dmath}
+%
+\begin{dmath}
+	\mathcal{H}(x^\top \sigma(x) - L) =   \mathcal{J}(\mathcal{J}(\sigma(x))^\top . x)
+\end{dmath}
+%
+Let $\mathcal{J}(\sigma(x)) = (J_1 \, J_2 \, J_3 ...)$. note that $x^\top . \mathcal{H}(\sigma)$ is a tensor product
+%
+\begin{equation}
+    \mathcal{H}(x^\top \sigma(x) - L) = \begin{pmatrix}
+        J_1^\top + x^\top . \mathcal{H}(\sigma) \\
+        J_2^\top + x^\top . \mathcal{H}(\sigma) \\
+        \vdots 
+    \end{pmatrix} = \mathcal{J}(\sigma(x))^\top + x^\top . \mathcal{H}(\sigma)
+\end{equation}
+%
+\begin{equation}
+    \mathcal{H}(x^\top \sigma(x) - L) = \mathcal{H}(L)^\top + \textcolor{red}{x^\top . \mathcal{H}(\sigma)}
+\end{equation}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+
+\subsubsection*{Energy Term 3}
+
+\begin{dmath}
+	\frac{1}{2} \mathcal{J}(\sigma(x)^\top \, \Xi \, \Xi^\top \, \sigma(x)) = \frac{1}{2} \, 2 \, \Xi \, \Xi^\top . \sigma(x) . \mathcal{J}(\sigma) = \sigma(x)^\top \Xi \, \Xi^\top . \mathcal{J}(\sigma)
+\end{dmath}
+%
+\begin{dmath}
+	\frac{1}{2} \mathcal{H}(\sigma(x)^\top \, \Xi \, \Xi^\top \, \sigma(x)) = \mathcal{J}((\sigma(x)^\top \Xi \, \Xi^\top . \mathcal{J}(\sigma))^\top)
+\end{dmath}
+%
+\begin{dmath}
+	\frac{1}{2} \mathcal{H}(\sigma(x)^\top \, \Xi \, \Xi^\top \, \sigma(x)) = \mathcal{J}(\mathcal{J}(\sigma)^\top \Xi \, \Xi^\top \, \sigma(x))
+\end{dmath}
+%
+\begin{dmath}
+	\frac{1}{2} \mathcal{H}(\sigma(x)^\top \, \Xi \, \Xi^\top \, \sigma(x)) = \mathcal{J}(\sigma)^\top \Xi \, \Xi^\top \, \mathcal{J}(\sigma) + \mathcal{J}(\mathcal{J}(\sigma)^\top \Xi \, \Xi^\top) \, \sigma(x)
+\end{dmath}
+%
+\begin{dmath}
+	\frac{1}{2} \mathcal{H}(\sigma(x)^\top \, \Xi \, \Xi^\top \, \sigma(x)) = \mathcal{J}(\sigma)^\top \Xi \, \Xi^\top \, \mathcal{J}(\sigma) + \textcolor{red}{\mathcal{H}(\sigma)^\top . \Xi \, \Xi^\top \, \sigma(x)}
+\end{dmath}
+%
+\noindent\rule{8cm}{0.4pt} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% \\
+
+\subsubsection*{Energy Term 4}
+
+\begin{dmath}
+    \mathcal{J}(\sigma(x)^\top \, \Xi \, \Phi^\top \Xi^\top y) = y^\top \, \Xi \, \Phi \, \Xi^\top \, \mathcal{H}(\sigma)
+\end{dmath}
+
+\end{document}

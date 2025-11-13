@@ -1,0 +1,456 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage}
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage{newtxtext}
+\usepackage{newtxmath}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{cancel}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{caption} 
+\usepackage{algpseudocode}
+\usepackage{bbm}
+\usepackage{float}
+\usepackage{framed}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{physics}
+\usepackage{empheq}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{breqn}
+\usepackage{multirow}
+\usepackage{pdfpages}
+
+\usepackage{tikz}
+\tikzset{elegant/.style={smooth, black, thick, samples=101}}
+\tikzstyle{round}=[circle ,text centered,draw=black]
+\tikzstyle{arrow} = [-,>=stealth]
+\tikzstyle{rct}=[rectangle,draw,thin,fill=white]
+\usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,positioning,fit,matrix,calc}
+
+\usepackage[most]{tcolorbox}
+
+\newtcbox{\mymath}[1][]{%
+    nobeforeafter, math upper, tcbox raise base,
+    enhanced, colframe=blue!30!black,
+    colback=blue!30, boxrule=1pt,
+    #1}
+
+\usepackage[colorlinks=true, linkcolor=red, urlcolor=blue, citecolor=blue]{hyperref}
+\allowdisplaybreaks
+
+
+\DeclareMathOperator*{\E}{\mathbb{E}}
+\DeclareMathOperator{\X}{\mathbf{X}}
+\DeclareMathOperator{\mean}{\boldsymbol{\mu}}
+\DeclareMathOperator{\std}{\boldsymbol{\sigma}}
+\let\Pr\relax
+\DeclareMathOperator*{\Pr}{\mathbb{P}}
+\DeclareMathOperator*{\R}{\mathbb{E}}
+\newcommand\thres{{\mbox{\it{thres}}}}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+%New colors defined below
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+%Code listing style named "mystyle"
+\lstdefinestyle{mystyle}{
+  backgroundcolor=\color{backcolour},   commentstyle=\color{codegreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,         
+  breaklines=true,                 
+  captionpos=b,                    
+  keepspaces=true,                 
+  numbers=left,                    
+  numbersep=5pt,                  
+  showspaces=false,                
+  showstringspaces=false,
+  showtabs=false,                  
+  tabsize=2
+}
+
+%"mystyle" code listing set
+\lstset{style=mystyle}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 8.9in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+
+\parindent 0in
+\parskip 1.5ex
+
+\begin{document}
+
+	\begin{center}
+		\framebox{
+			\vbox{
+				\hbox to 6.50in { {\bf Episodic Memory Theory of RNNs} \hfill }
+				\vspace{4mm}
+				\hbox to 6.50in { {\Large \hfill Theoretical Concepts and Derivations \hfill} }
+				\vspace{2mm}
+				\hbox to 6.50in { { Arjun Karuvally, Peter Delmastro \hfill} }
+			}
+		}
+	\end{center}
+	\vspace*{1mm}
+
+    \section{Mathematical Preliminaries}
+    
+\textbf{Vector}: An abstract mathematical object that is invariant to basis transformations. A vector $v$ is represented using the Dirac notation: $\ket{v}$ \\
+
+\textbf{Vector Space}: An abstract vector space of $n$ dimensions over the field $\mathbb{R}$ is the set of vectors obtained by the linear combination
+\begin{dmath}
+    \ket{v} = \sum_{i=1}^n v^i \ket{e_i}
+\end{dmath}
+The set of vectors $\ket{e_i}$ is called the \textbf{basis} of the space and the elements $v^i$ are the \textbf{vector components} in that basis. From this definition, it can be easily seen that $\ket{v}$ is invariant to the basis but the vector components are basis dependent.
+
+\textbf{Vector Dual Space}: Given a Vector space $V$, $V^*$ is the set of associated linear forms/covectors $\phi: V \rightarrow \mathbb{R}$ represented in Dirac notation as $\bra{v}$. For the set of basis vectors $\ket{e_i} \in V$, the \textbf{basis dual} is the set of covectors $\bra{e^j} \in V^*$ such that $\bra{e^j} \ket{e_i} = \delta_{i j}$ where $\delta$ is the Kronecker delta.
+
+\textbf{Memory}: persistent states in the evolution of a dynamical system. Memory can be \textbf{stable memory} if the system after reaching the state stays in the state for infinite time. Stable memories are fixed points of the system. Memory acn be \textbf{meta-stable memory} if the state stays for a non-trivial amount of time. Non-trivial meaning that the state is not transient.
+
+\textbf{Energy Function}: of a dynamical system is any function $E(X)$ that if $\dv{X}{t} = f(X) \implies \dv{E(X)}{t} \leq 0$ in continuous dynamical system or $X(t+1) - X(t) \implies E(X(t+1)) - E(X(t)) \leq 0$ in discrete dynamical system.
+
+	\section{System - Derivation from Continuous Time Dynamics}
+	
+The general system of neurons is governed by the following equations. The state variables of the dynamical system are $V_f \in \mathbb{R}^{N_f \times 1}, V_h \in \mathbb{R}^{N_h \times 1}, V_d \in \mathbb{R}^{N_f \times 1}$. The interactions are represented by $\Xi \in \mathbb{R}^{N_f \times N_h}$ and $\Phi \in \mathbb{R}^{N_h \times N_h}$. $\Phi$ represents synaptic strength \textit{from} $V_h$ \textit{to} $V_h$.
+	
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f \dv{V_f}{t} =& \sqrt{\alpha_s} \, \Xi \, \sigma_h(V_h) - V_f \, , \\
+	\mathcal{T}_h \dv{V_h}{t} =& \sqrt{\alpha_s} \, \Xi^\top \, \sigma_f(V_f) + \alpha_c \Phi^\top \Xi^\top V_{d} - V_h \, , \\
+	\mathcal{T}_d \dv{V_d}{t} =& \sigma_f(V_f) - V_d \, .
+\end{dcases}
+\end{empheq}
+%
+The system has an energy function given by
+%
+\begin{dmath}
+	E = \Bigg[ V_f^\top \, \sigma_f(V_f) - L_f\Bigg] + \Bigg[ V_h^\top \, \sigma_h(V_h) - L_h \Bigg] - \Bigg[ \sqrt{\alpha_s} \, \sigma_f(V_f)^\top \, \Xi \, \sigma_h(V_h) \Bigg] - \alpha_c \Bigg[ V_{d}^\top \, \Xi \, \Phi \sigma_h(V_h)  \Bigg]
+\end{dmath}
+%
+Conditions:
+\begin{itemize}
+	\item $\mathcal{T}_h \rightarrow 0$
+	\item $\mathcal{T}_d \rightarrow 0$
+	\item discretize time for $V_f$
+	\item $\sigma_h(X) = X$
+	\item $\alpha_s = \alpha_c = 1$
+	\item $\mathcal{T}_f = \Delta t$
+\end{itemize}    
+%
+$\sigma_h(X) = X \implies L_h = \frac{1}{2} \, V_h^\top \, V_h$
+
+\textbf{stored memories}: These are the column vectors of the matrix $\Xi$. \\
+\textbf{spurious memories}: These are memories in the system that does not belong to the set of the intended stored memories. \\
+\textbf{memory interactions}: The matrix $\Phi$ denotes the intermemory interaction since it encodes the temporal relationships between the stored memories.
+
+\section{Deriving governing equations}
+
+From a given time $t$, the update equations are given as
+
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) =& \Xi \, \sigma_h(V_h(t)) - V_f(t) \, , \\
+	V_h(t) =& \Xi^\top \, \sigma_f(V_f(t)) + \Phi^\top \Xi^\top V_{d}(t) \, , \\
+	V_d(t) =& \sigma_f(V_f(t)) \, .
+\end{dcases}
+\end{empheq}
+%
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) =& \Xi \, \sigma_h(V_h) - V_f(t) \, , \\
+	V_h(t) =& \Xi^\top \, \sigma_f(V_f(t)) + \Phi^\top \Xi^\top \sigma_f(V_f) \, , \\
+\end{dcases}
+\end{empheq}
+%
+\begin{empheq}{equation}
+\begin{dcases}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) =& \Xi \, V_h - V_f(t) \, , \\
+	V_h(t) =& (I + \Phi^\top) \Xi^\top \sigma_f(V_f) \, , \\
+\end{dcases}
+\end{empheq}
+%
+\begin{dmath}
+	\mathcal{T}_f (V_f(t+1) - V_f(t)) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(V_f) - V_f(t)
+\end{dmath}
+%
+Final discrete upate equation
+%
+\begin{dmath}
+	V_f(t+1) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(V_f)
+	\label{governingDynamics:original}
+\end{dmath}
+%
+Restrict the norm of matrix $||\Xi \, (I + \Phi^\top) \Xi^\top|| \leq 1$. \\
+%
+This allows us to consider the transformation $V'_f = \sigma_f(V_f)$, so for invertible $\sigma_f$, 
+%
+\begin{dmath}
+	\sigma^{-1}_f(V'_f(t+1)) = \Xi \, (I + \Phi^\top) \Xi^\top V'_f
+\end{dmath}
+%
+\begin{dmath}
+	\sigma^{-1}_f(V'_f(t+1)) = \Xi \, (I + \Phi^\top) \Xi^\top V'_f
+\end{dmath}
+%
+\begin{dmath}
+	V'_f(t+1) = \sigma_f(\Xi \, (I + \Phi^\top) \Xi^\top V'_f)
+	\label{governingDynamics:rnn}
+\end{dmath}
+%
+this is a general update equation for an RNN without bias. The physical interpretation of this equation is that the columns of $\Xi$ stores the individual \textit{memories} of the system and the linear operator $(I+\Phi)$ is the temporal interaction between the stored \textit{memories}.
+%
+In the memory modeling literature, it is typical to consider memories as a fixed collection instead of a variable collection that shares a common interaction behavior. We will show how in the next sections how the dynamics as a result of fixed collection can be used to store variable information.
+%
+\section{Topological Conjugacy with RNNs}
+%
+Proof that dynamical systems governed by Equations \ref{governingDynamics:original} and \ref{governingDynamics:rnn} are topological conjugates.
+
+Consider $f(x) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(x)$ for Equation \ref{governingDynamics:original} and $g(x) = \sigma_f(\Xi \, (I + \Phi^\top) \Xi^\top x)$ for Equation \ref{governingDynamics:rnn}. Consider a homeomorphism $h(y) = \sigma_f(y)$ on $g$. Then,
+%
+\begin{dmath}
+	(h^{-1} \circ g \circ h) (x) = \sigma_f^{-1}( \sigma_f(\Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(x)) ) = \Xi \, (I + \Phi^\top) \Xi^\top \sigma_f(x) = f(x)
+\end{dmath}
+%
+So, for the homeomorphism $h$ on $g$, we get that $h^{-1} \circ g \circ h = f$ proving that $f$ and $g$ are topological conjugates. Therefore all dynamical properties of $f$ and $g$ are shared.
+%
+\section{Tensor Formalism}
+
+Since $I$ and $\Phi$ are linear operators, they can be combined into a single linear operator. Lets call this combined linaer operator $\Phi$. Further theory will use the new $\Phi$ definition.
+%
+Let $\ket{e_i}$ be the $i^{\text{th}}$ standard basis \textit{vector}. $\bra{\epsilon^j}$ be the \textit{covector} of the $j^{\text{th}}$ standard basis vector such that $\bra{\epsilon_j} \ket{e_i} = \delta_{i j}$ where $\delta$ is the Kronecker delta.
+%
+Consider the matrix formulation of the discrete RNN system analogous to pseudoinverse associative memories.
+%
+\begin{dmath}
+    h(t+1) = \Xi \, \Phi \, \Xi^\dag g(h(t))
+\end{dmath}
+%
+The same system represented in tensor format is given by (using Einstein Summation Convention) - greek indices iterate over memory space indices $\{ 1, 2, \hdots, N_h \}$, alpha numeric indices iterate over feature space indices $\{ 1, 2, \hdots, N_f \}$
+%
+\begin{dmath}
+    \ket{h(t+1)} = \left( \xi^i_{\mu} \, \Phi^\mu_\nu \, (\xi^\dag)^\nu_j \; \ket{e_i} \bra{\epsilon^j} \right) \ket{h(t)} = W_{hh} \vec{h}(t)
+\end{dmath}
+%
+%Here, $\ket{e_i}$ denotes an abstract vector in a vector space and $\bra{\epsilon^j}$ represents a covector taken from the dual vector space such that $\bra{\epsilon^j} \ket{e_i} = \delta_{i j}$ where $\delta$ is the Kronecker delta.
+%
+In this view, $W_{hh}$ can be thought of a linear operator acting on the current state vector $\vec{h}(t)$. This abstract linear algebra view of the update equation will be useful when we transform the basis of the system.
+%
+In the tensor formalism, $\ket{h}$ is defined as.
+%
+\begin{dmath}
+    \ket{h(t)} = \bra{\epsilon^j} \ket{h(t)} \ket{e_i}
+\end{dmath}
+%
+since $\ket{e_i}$ is the standard basis vectors, $\bra{\epsilon^j} \ket{h(t)}$ are the \textit{vector components} of $\ket{h(t)}$ we obtain from simulations.
+%
+Now, consider a new set of basis vectors given by $\bra{\psi_\mu} = \xi^i_{\mu} \ket{e_i}$. It can be seen that the dual of the basis vectors is $\bra{\psi^\nu} = (\xi^\dag)_j^\nu \bra{\epsilon^j}$. In this new basis, the update equations transform to
+%
+\begin{dmath}
+    \ket{h(t+1)} = \left(\Phi_{\nu}^\mu \, \ket{\psi_\mu} \, \bra{\psi^\nu} \right) \ket{h(t)}
+\end{dmath}
+%
+In this new basis $\ket{\psi}$, the update equations can be easily interpreted as applying a single linear operation $\Phi$ on $h(t)$ represented in the the memory basis $\psi$. Since the new bases simplifies the interpretation of the dynamics by projecting onto the space spanned by the stored \textit{memories}, we name the set of $\ket{\psi_\mu}$ the \textbf{memory bases}. Using these conventions, we design our theoretical model.
+
+\section{Problem Setup - Variable Binding}
+
+We formalize the variable binding problem in the following manner. Let the RNN be defined by a task containing two phases - the input phase and the output phase. At each timestep of the the input phase, external information is provided to the network. In the output phase, at each time step, the network needs to utilize this external information to synthesize novel outputs.
+%
+Formally, let the input phase consist of $s$ timesteps where at each time step $t$, a vector of $d$ dimensions $\ket{u(t)} = u^i(t) \ket{e_i}$ is provided as input to the model. We call the vector components $u^i(s)$, the external information that needs to be potentially \textit{stored} in the RNN for future computation.
+%
+After the input phase is complete, the zero vector is passed as input to the model. The RNN thus evolves autonomously (without any external input) during the output phase.
+%
+During training, the RNN output is compared to the ground truth sequence to obtain a loss function to be used for backpropagation. Generally, the task for the RNN is to estimate a dynamical system of $x$ given by the following equation
+%
+\begin{dmath}
+    \ket{x(t+1)} = f(\ket{x(t)}, \ket{x(t-1)},\hdots \ket{x(1)}, z)
+\end{dmath}
+%
+where $z$ can be a latent variable not directly observable in the system but may be infered from the history. The RNN is trained to approximate this dynamical system. The Elman RNN has an update equation (in matrix notation) given by
+%
+\begin{dmath}
+    \begin{cases}
+        h(t+1) = \tanh(W_{hh} h(t) + W_{u h} u(t)) \\
+        o(t) = W_r \, h(t+1)
+    \end{cases}
+\end{dmath}
+%
+where $W_{hh}, W_{uh}, W_r$ are linear operators, $h(t)$ is the hidden state, $u(t)$ is the input, and $o(t)$ is the output. To simplify the theory we assume that $W_{hh}$ has sufficient capacity to represent all the variables required to estimate the dynamical system. We further assume that $\ket{h(0)} = 0 \ket{e_i}$ - the zero vector.
+
+\section{Theoretical model of variable binding}
+%
+Instead of directly analyzing the non-linear system, we define the variable binding mechanisms on a linear system defined by
+%
+\begin{dmath}
+    \ket{h(t+1)} = \Phi_{\nu}^\mu \, \ket{\psi_\mu} \, \bra{\psi^\nu} \ket{h(t)}
+\end{dmath}
+%
+Consider that $\ket{h(t)}$ is defined in terms of the subspaces that are each spanned by subsets of vectors in the collection $\ket{\psi_\mu}$. The components of the $i^{\text{th}}$ subspace can be extracted from $\ket{h(t)}$ in the standard basis by the linear operator $\Psi^*_i$ variable defined as $ \Psi^*_i = \sum_{\mu=(i-1)\kappa + 1}^{i \kappa} \ket{e_\mu} \bra{\psi^\mu}$, $\kappa$ is the number of dimensions in each of the variable subspaces.
+%
+The linear operator $\Phi$ is defined in the theoretical model as:
+%
+\begin{dmath}
+    \Phi = \sum_{\mu=1}^{(N-1) \kappa} \ket{\psi_{\mu}} \bra{\psi^{\mu+\kappa}} + \sum_{\mu=(N-1)\kappa}^{N \kappa} \Phi_{\nu}^{\mu} \ket{\psi_\mu} \bra{\psi^\nu}
+\end{dmath}
+%
+Here the $N^{th}$ subspace activity is a linear composition operation acting on all the variable subspaces. 
+%
+\subsection{Writing Variables}
+
+We will describe how external information can be written to the hidden state of the RNN within the framework. Typically, RNNs have $W_{uh}$ which facilitates the interaction of external information with the RNN. In our framework, $W_{uh}$ has the following equation when the input $\ket{u} = u^i \ket{e_i}$.
+%
+\begin{dmath}
+    W_{uh} = \Psi_N = \ket{\psi_{(N-1)\kappa + j}} \bra{e^j}
+\end{dmath}
+%
+It can be easily seen that the loading operation "inserts" the input variable into the $N^{th}$ subspace. Due to the circulant nature of the $\Phi$ operator, this external input will get moved around to the sequentially connected subspaces over time. 
+
+\subsection{Reading Variables}
+
+We will describe how inputs at each timestep is read from the RNN. RNNs have a linear operator $W_{r}$ which facilitates the reading of information from $\ket{h(t)}$ at each time step. In our framework, $W_{r}$ has the following equation when the output $\ket{o} = o^i \ket{e_i}$.
+%
+\begin{dmath}
+    W_{r} = \Psi^*_N = \sum_{\mu=(N-1)\kappa + 1}^{N\kappa} \ket{e_{\mu - (N-1)\kappa}} \bra{\psi^{\mu}}
+\end{dmath}
+%
+It can be easily seen that the reading operation reads the contents of the $r^{th}$ subspace.
+
+\section{Sample Tasks}
+
+We will demonstrate the behavior of the RNN according to the theory on two tasks that needs some variable binding mechanisms to learn and generalize.
+
+\section{Repeat Copy Task}
+
+Repeat Copy is a task typically used to evaluate the memory storage characteristics of RNNs since the task has a deterministic evolution represented by a simple algorithm that stores all input vectors in memory for later retrieval.
+%
+Although elementary, repeat copy provides a simple framework to imagine the variable binding mechanisms we theorized in action.
+%
+For the repeat copy task, the linear operators of the RNN has the following equations.
+%
+\begin{empheq}{equation}
+    \begin{cases}
+        \Phi = \sum_{\mu=1}^{(s-1) \kappa} \ket{\psi_{\mu}} \bra{\psi^{\mu+\kappa}} + \sum_{\mu=(s-1)\kappa + 1}^{s \kappa} \ket{\psi_\mu} \bra{\psi^{\mu - (s-1) \kappa}} \\
+        W_{uh} = \Psi_{s} \\
+        W_r = \Psi^*_{s}
+    \end{cases}
+\end{empheq}
+%
+This $\phi$ can be imagined as copying the contents of the subspaces in a cyclic fashion. That is, the content of the $i^{th}$ subspace goes to $(i-1)^{\text{th}}$ subspace with the first subspace being copied to the $N^{\text{th}}$ subspace.
+%
+%For simplicity, lets assume that the stored memories are the standard basis vectors, that is $\ket{\psi_{\mu}} = \delta_{i \mu} \ket{e_{i}}$.
+The dynamical evolution of the RNN is represented at the time step $1$ as,
+%
+\begin{dmath}
+    \ket{h(1)} = \ket{\psi_{(s-1)\kappa + j}} \bra{e^j} u^i(1) \ket{e_i}
+\end{dmath}
+%
+\begin{dmath}
+    \ket{h(1)} = u^i(1) \ket{\psi_{(s-1)\kappa + j}} \bra{e^j} \ket{e_i}
+\end{dmath}
+%
+\begin{dmath}
+    \ket{h(1)} = u^i(1) \ket{\psi_{(s-1)\kappa + j}} \delta_{i j}
+\end{dmath}
+%
+Kronecker delta index cancellation
+%
+\begin{dmath}
+    \ket{h(1)} = u^i(1) \ket{\psi_{(s-1)\kappa + i}}
+\end{dmath}
+%
+At time step $2$,
+%
+\begin{dmath}
+    \ket{h(2)} = u^i(1) \, \Phi \, \ket{\psi_{(s-1)\kappa + i}} + u^i(2) \, \ket{\psi_{(s-1)\kappa + i}}
+\end{dmath}
+%
+Expanding $\Phi$
+%
+\begin{dmath}    
+    \ket{h(2)} = u^i(1) \, \left( \sum_{\mu=1}^{(s-1) \kappa} \ket{\psi_{\mu}} \bra{\psi^{\mu+\kappa}} + \sum_{\mu=(s-1)\kappa + 1}^{s \kappa} \ket{\psi_\mu} \bra{\psi^{\mu - (s-1) \kappa}} \right) \, \ket{\psi_{(s-1)\kappa + i}} + u^i(2) \, \ket{\psi_{(s-1)\kappa + i}}
+\end{dmath}
+%
+\begin{dmath}    
+    \ket{h(2)} = u^i(1) \, \ket{\psi_{(s-2)\kappa + i}} + u^i(2) \, \ket{\psi_{(s-1)\kappa + i}}
+\end{dmath}
+%
+At the final step of the input phase when $t=s$, $\ket{h(s)}$ is defined as:
+%
+\begin{dmath}    
+    \ket{h(s)} = \sum_{\mu=1}^s u^i(\mu) \, \ket{\psi_{(\mu-1)\kappa + i}}
+\end{dmath}
+%
+For $t$ timesteps after $s$, the general equation for $\ket{h(s+t)}$ is:
+%
+\begin{dmath}    
+    \ket{h(s+t)} = \sum_{\mu=1}^s u^i(\mu) \, \ket{\psi_{\left[ \left(\left(\mu-t-1 \mod s\right) + 1 \right)\kappa + i \right]}}
+\end{dmath}
+%
+From this equation for the hidden state vector, it can be easily seen that the $\mu^{\text{th}}$ variable is stored in the $\left[(\mu-t-1 \mod s) + 1\right]^{\text{th}}$ subspace at time step $t$. The readout weights $W_r = \Psi_s^*$ reads out the contents of the $s^{\text{th}}$ subspace.
+
+\section{Compose Copy}
+
+Repeat copy require only the storage and retrieval of external information without any novel synthesis. The compose copy synthesizes novel output from the given inputs. The input to the compose copy task is defined with $s$ vectors, each of of dimension $s$, $\{ x(1), x(2), \hdots, x(s) \}$. For any time $t > s$, $x(t)$ is defined as
+%
+\begin{dmath}
+    \ket{x(t)} = \sum_{i=1}^s \bra{e^i} \ket{x(t-s-2+i)} \ket{e_i}
+\end{dmath}
+%
+Analogous to compose copy, RNN linear opeartors can be written as
+%
+\begin{empheq}{equation}
+    \begin{cases}
+        \Phi = \sum_{\mu=1}^{(s-1) \kappa} \ket{\psi_{\mu}} \bra{\psi^{\mu+\kappa}} + \sum_{\mu=(s-1)\kappa + 1}^{s \kappa} \ket{\psi_\mu} \bra{\psi^{(\mu - (s-1) \kappa - 1)\kappa + \mu - (s-1) \kappa}} \\
+        W_{uh} = \Psi_{s} \\
+        W_r = \Psi^*_{s}
+    \end{cases}
+\end{empheq}
+%
+The linear operator $\Phi$ has a similar structure as repeat copy but now instead of just copying the $1^{\text{st}}$ subspace to the $s^{\text{th}}$ subspace in timestep $s+1$, the contents are composed to obtain a new vector which is read out by the readout operator.
+
+\section{Non-linear RNN}
+
+The linear RNNs we discussed are powerful in terms of the content of variables that can be stored and reliably retrieved. The variable contents, $u^i$, can be any real number and this information can be reliably retrieved in the end using the appropriate readout weights.
+%
+However, learning such a system is difficult using gradient descent procedures. To see this, setting the components of $\Phi$ to anything other than unity might result in dynamics that is eventually converging or diverging resulting in a loss of information in these variables.
+%
+Additionally, linear systems are not used in the practical design of RNNs. The main difference is now the presence of the nonlinearity. In this case, our theory can still be used. 
+%
+To illustrate this, consider a general RNN evolving according to $h(t+1) = g(W_{hh} h(t) + b)$ where $b$ is a bias term. Suppose $h(t) = h^*$ is a fixed point of the system. We can then linearize the system around the fixed point to obtain the linearized dynamics in a small region around the fixed point. 
+%
+\begin{dmath}
+    h(t+1) - h^* = \mathcal{J}(g)|_{h^*} \, W_{hh} \, (h(t+1) - h^*) + O((h(t+1) - h^*)^2)
+\end{dmath}
+%
+where $\mathcal{J}$ is the jacobian of the activation function $g$. If the RNN had an additional input, this can also be incorporated into the linearized system by treating the external input as a control variable
+%
+\begin{dmath}
+    h(t+1) - h^* = \mathcal{J}(g)|_{h^*} \, W_{hh} \, (h(t) - h^*) + \mathcal{J}(g)|_{h^*} \, W_{uh} u(t)
+\end{dmath}
+%
+Substituting $h(t) - h^* = h^{\prime}(t)$
+%
+\begin{dmath}
+    h^{\prime}(t+1) = \mathcal{J}(g)|_{h^*} \, W_{hh} \, h^{\prime}(t) + \mathcal{J}(g)|_{h^*} \, W_{uh} u(t)
+\end{dmath}
+%
+which is exactly the linear system which we studied where instead of $W_{hh} = \Xi \Phi \Xi^\dag$, we have $J(g)|_{h^*} W_hh = \Xi \Phi \Xi^\dag$. With this result, we will analyse Elman RNN models that have the general update equations $h(t+1) = \tanh(W_{hh} h(t) + W_{uh} u(t) + b)$.
+\end{document}

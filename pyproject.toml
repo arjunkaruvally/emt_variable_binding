@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emt-variable-binding"
+version = "0.1.0"
+description = "Episodic Memory Toolbox - Variable Binding"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Arjun Karuvally", email = "arjun.k018@gmail.com"}]
+dependencies = [
+    "numpy>=1.21,<2.0",
+    "torch>=2.0",
+    "scikit-learn>=1.0",
+    "pandas>=2.0",
+    "matplotlib>=3.0",
+    "pytorch-lightning"
+]
+
+[tool.setuptools.packages.find]
+include = ["em_discrete*"]
