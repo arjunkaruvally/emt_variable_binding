@@ -53,7 +53,7 @@ class BinaryLinearVBInfiniteHorizonDataset(IterableDataset):
         output_horizon=10,
         total_length=500,
         task_id=(31, 0, 0),
-        generator_stop=2000,
+        generator_stop=500,  # Reduced from 2000: infinite horizon sequences are 37x longer
     ):
         self.d = d
         self.batch_size = batch_size
@@ -178,17 +178,22 @@ class BinaryLinearVBInfiniteHorizonDataset(IterableDataset):
                 seq_end = current_pos + seq_len
 
                 # Generate random binary data, ensuring it never creates all -1s pattern (reserved for EOS)
-                for t in range(seq_start, seq_end):
-                    for b in range(self.batch_size):
-                        # Generate random binary vector
-                        data = torch.randint(0, 2, size=(self.d,)) * 2 - 1
+                # VECTORIZED: Generate all data for this sequence at once
+                seq_data = torch.randint(0, 2, size=(seq_len, self.batch_size, self.d)) * 2 - 1
 
-                        # If all -1s, flip one random bit to +1
-                        if torch.all(data == -1):
-                            flip_idx = self.rng.randint(0, self.d)
-                            data[flip_idx] = 1
+                # Fix any all -1s patterns (reserved for EOS)
+                # Check which (time, batch) positions have all -1s
+                all_minus_one = (seq_data == -1).all(dim=-1)  # Shape: (seq_len, batch_size)
+                if all_minus_one.any():
+                    # For each position that's all -1s, flip a random dimension to +1
+                    positions = all_minus_one.nonzero(as_tuple=False)
+                    for pos in positions:
+                        t_idx, b_idx = pos[0].item(), pos[1].item()
+                        flip_idx = self.rng.randint(0, self.d)
+                        seq_data[t_idx, b_idx, flip_idx] = 1
 
-                        x_sample[t, b, :] = data
+                # Assign to x_sample
+                x_sample[seq_start:seq_end, :, :] = seq_data
 
                 # Copy input sequence to y_sample (needed for recurrent composition)
                 y_sample[seq_start:seq_end, :, :] = x_sample[seq_start:seq_end, :, :]
