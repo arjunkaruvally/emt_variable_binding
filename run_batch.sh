@@ -15,7 +15,6 @@ EPOCHS=20
 SEQ_LENGTH=8
 LEARNING_RATE=0.001
 BATCH_SIZE=64
-NUM_WORKERS=2
 
 echo "=========================================="
 echo "Starting batch training experiments"
@@ -32,44 +31,58 @@ echo ""
 
 # Loop through hidden dimensions from 8 to 72 in steps of 8
 for HIDDEN_DIM in 8 16 24 32 40 48 56 64 72; do
-    EXPERIMENT_NAME="infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}_hidden_${HIDDEN_DIM}"
+    BASE_EXPERIMENT_NAME="infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}_hidden_${HIDDEN_DIM}"
 
     echo "=========================================="
-    echo "Starting experiment: $EXPERIMENT_NAME"
+    echo "Starting experiment batch: $BASE_EXPERIMENT_NAME"
     echo "Hidden dimension: $HIDDEN_DIM"
+    echo "Training $NUM_MODELS models with different seeds"
     echo "=========================================="
 
-    python train.py \
-        --experiment_name "$EXPERIMENT_NAME" \
-        --output_dir "$OUTPUT_DIR" \
-        --seq_length $SEQ_LENGTH \
-        --hidden_dim $HIDDEN_DIM \
-        --num_models $NUM_MODELS \
-        --epochs $EPOCHS \
-        --learning_rate $LEARNING_RATE \
-        --batch_size $BATCH_SIZE \
-        --num_workers $NUM_WORKERS \
-        --infinite_horizon \
-        --output_horizon 15 \
-        --total_length 300 \
-        --task_id 255 0 0
+    # Loop through seeds (0, 1000, 2000, ..., 29000)
+    for MODEL_IDX in $(seq 0 $((NUM_MODELS - 1))); do
+        SEED=$((MODEL_IDX * 1000))
+        MODEL_NUM=$((MODEL_IDX + 1))
+        EXPERIMENT_NAME="${BASE_EXPERIMENT_NAME}/model-${MODEL_NUM}"
 
-    if [ $? -eq 0 ]; then
         echo ""
-        echo "Successfully completed: $EXPERIMENT_NAME"
-        echo ""
-    else
-        echo ""
-        echo "Failed: $EXPERIMENT_NAME"
-        echo ""
-        exit 1
-    fi
+        echo "Training model $MODEL_NUM/$NUM_MODELS (seed=$SEED, hidden=$HIDDEN_DIM)"
+
+        python train.py \
+            --experiment_name "$EXPERIMENT_NAME" \
+            --output_dir "$OUTPUT_DIR" \
+            --seq_length $SEQ_LENGTH \
+            --hidden_dim $HIDDEN_DIM \
+            --seed $SEED \
+            --epochs $EPOCHS \
+            --learning_rate $LEARNING_RATE \
+            --batch_size $BATCH_SIZE \
+            --infinite_horizon \
+            --output_horizon 15 \
+            --total_length 300 \
+            --task_id 255 0 0
+
+        if [ $? -eq 0 ]; then
+            echo "✓ Model $MODEL_NUM completed successfully"
+        else
+            echo "✗ Model $MODEL_NUM failed"
+            exit 1
+        fi
+    done
+
+    echo ""
+    echo "=========================================="
+    echo "✓ Completed all models for hidden_dim=$HIDDEN_DIM"
+    echo "=========================================="
 done
 
+echo ""
+echo "=========================================="
 echo "All experiments completed successfully!"
+echo "=========================================="
 echo ""
 echo "Results saved in:"
 for HIDDEN_DIM in 8 16 24 32 40 48 56 64 72; do
-    echo "  - $OUTPUT_DIR/infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}_hidden_${HIDDEN_DIM}"
+    echo "  - $OUTPUT_DIR/infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}_hidden_${HIDDEN_DIM}/"
 done
 echo ""
