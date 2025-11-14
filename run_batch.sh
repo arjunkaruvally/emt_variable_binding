@@ -6,7 +6,7 @@
 #SBATCH -t 1-23:00:00  # Job time limit
 #SBATCH -o /scratch4/workspace/akaruvally_umass_edu-simple/logs/varbind_1_lra-%A_%a.out
 #SBATCH -e /scratch4/workspace/akaruvally_umass_edu-simple/logs/varbind_1_lra-%A_%a.err
-#SBATCH --array=0-8
+#SBATCH --array=0-39
 #SBATCH -G 2
 
 #SBATCH --account=pi_erietman_umass_edu
@@ -36,7 +36,6 @@ EPOCHS=20
 SEQ_LENGTH=8
 LEARNING_RATE=0.001
 BATCH_SIZE=64
-NUM_WORKERS=2
 
 EXPERIMENT_NAME="infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}"
 
@@ -63,7 +62,7 @@ then
   # simulated SLURM environment variables
   SLURM_ARRAY_TASK_ID=0;
   SLURM_ARRAY_TASK_COUNT=10;
-  EXPERIMENT_NAME="${EXPERIMENT_NAME}_debug"
+  OUTPUT_DIR="${OUTPUT_DIR}_debug"
 else
   echo "SLURM ARRAY JOB DETECTED";
   IN_SLURM_ARRAY=1;
@@ -75,50 +74,63 @@ GROUP_ID=0   # this is the start of the group id (group jobs by seed for average
 
 # Loop through hidden dimensions from 8 to 72 in steps of 8
 for HIDDEN_DIM in 8 16 24 32 40 48 56 64 72; do
+    # Loop through seeds (0, 1000, 2000, ..., 29000)
+    for MODEL_IDX in $(seq 0 $((NUM_MODELS - 1))); do
+        SEED=$((MODEL_IDX * 1000))
+        MODEL_NUM=$((MODEL_IDX + 1))
 
-    echo "$SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_COUNT $JOB_ID / $LAST_JOB_ID"
-    if [ $(( $JOB_ID % $SLURM_ARRAY_TASK_COUNT )) -eq $SLURM_ARRAY_TASK_ID  ]
-    then
-        EXPERIMENT_NAME="${EXPERIMENT_NAME}_hidden_${HIDDEN_DIM}"
+        echo "$SLURM_ARRAY_TASK_ID $SLURM_ARRAY_TASK_COUNT $JOB_ID / $LAST_JOB_ID"
+        if [ $(( $JOB_ID % $SLURM_ARRAY_TASK_COUNT )) -eq $SLURM_ARRAY_TASK_ID  ]
+        then
+            EXPERIMENT_NAME="${EXPERIMENT_NAME}_hidden_${HIDDEN_DIM}"
 
-        echo "=========================================="
-        echo "Starting experiment: $EXPERIMENT_NAME"
-        echo "Hidden dimension: $HIDDEN_DIM"
-        echo "=========================================="
+            echo "=========================================="
+            echo "Starting experiment batch: $EXPERIMENT_NAME"
+            echo "Hidden dimension: $HIDDEN_DIM"
+            echo "Training $NUM_MODELS models with different seeds"
+            echo "=========================================="
+        
+            EXPERIMENT_NAME="${EXPERIMENT_NAME}/model-${MODEL_NUM}"
 
-        python train.py \
-            --experiment_name "$EXPERIMENT_NAME" \
-            --output_dir "$OUTPUT_DIR" \
-            --seq_length $SEQ_LENGTH \
-            --hidden_dim $HIDDEN_DIM \
-            --num_models $NUM_MODELS \
-            --epochs $EPOCHS \
-            --learning_rate $LEARNING_RATE \
-            --batch_size $BATCH_SIZE \
-            --num_workers $NUM_WORKERS \
-            --infinite_horizon \
-            --output_horizon 15 \
-            --total_length 300 \
-            --task_id 255 0 0
+            echo ""
+            echo "Training model $MODEL_NUM/$NUM_MODELS (seed=$SEED, hidden=$HIDDEN_DIM)"
 
-        if [ $? -eq 0 ]; then
-            echo ""
-            echo "Successfully completed: $EXPERIMENT_NAME"
-            echo ""
-        else
-            echo ""
-            echo "Failed: $EXPERIMENT_NAME"
-            echo ""
-            exit 1
+            python train.py \
+                --experiment_name "$EXPERIMENT_NAME" \
+                --output_dir "$OUTPUT_DIR" \
+                --seq_length $SEQ_LENGTH \
+                --hidden_dim $HIDDEN_DIM \
+                --seed $SEED \
+                --epochs $EPOCHS \
+                --learning_rate $LEARNING_RATE \
+                --batch_size $BATCH_SIZE \
+                --infinite_horizon \
+                --output_horizon 15 \
+                --total_length 300 \
+                --task_id 255 0 0
+
+            if [ $? -eq 0 ]; then
+                echo ""
+                echo "Successfully completed: $EXPERIMENT_NAME"
+                echo ""
+            else
+                echo ""
+                echo "Failed: $EXPERIMENT_NAME"
+                echo ""
+                exit 1
+            fi
         fi
-    fi
-    ((JOB_ID=JOB_ID+1))
+        ((JOB_ID=JOB_ID+1))
+    done
 done
 
+echo ""
+echo "=========================================="
 echo "All experiments completed successfully!"
+echo "=========================================="
 echo ""
 echo "Results saved in:"
 for HIDDEN_DIM in 8 16 24 32 40 48 56 64 72; do
-    echo "  - $OUTPUT_DIR/infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}_hidden_${HIDDEN_DIM}"
+    echo "  - $OUTPUT_DIR/infinite_horizon_${NUM_MODELS}models_seqlen_${SEQ_LENGTH}_hidden_${HIDDEN_DIM}/"
 done
 echo ""
